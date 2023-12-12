@@ -29,8 +29,11 @@ def kernel_tri(x: np.array) -> np.array:
     return np.where(np.abs(x) <= 1, 1-np.abs(x), 0)
 
 def kernel_sinc(x: np.array) -> np.array:
-    return np.where(x == 0, (1/np.pi), np.sin(x) / (np.pi * x))
+    return np.where(x == 0, (1/np.pi), np.sin(x)/(np.pi*x))
 
+    # np.where still returns runtime warning for division by zero ...
+    # np.where just selects between two arrays after those were computed, so after the warning already occurred
+    
     # Q = should i divide x by pi in the argument of sin
     # Q = what to do when d >= 2 ??? divide by pi^d ??? where and when
 
