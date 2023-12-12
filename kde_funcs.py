@@ -31,6 +31,8 @@ def kernel_tri(x: np.array) -> np.array:
 def kernel_sinc(x: np.array) -> np.array:
     return np.where(x == 0, (1/np.pi), np.sin(x) / (np.pi * x))
 
+    # Q = should i divide x by pi in the argument of sin
+    # Q = what to do when d >= 2 ??? divide by pi^d ??? where and when
 
 """
 Now extending to multivariate kernels. The simplest multivariate extension is the product kernel:
