@@ -22,6 +22,11 @@ def kernel_gauss(x: np.array) -> np.array:
 def kernel_epa(x: np.array) -> np.array:
     return np.where(np.abs(x) <= 1, 3/4 * (1 - x**2), 0)
 
+def kernel_epa_hole(x: np.array) -> np.array:
+    # epa kernel but with a hole at the origin
+    # ie the kernel is zero at the origin
+    return np.where(np.abs(x) <= 1, 3/4 * (1 - x**2), 0) - np.where(x == 0, 3/4, 0)
+
 def kernel_rect(x: np.array) -> np.array:
     return np.where(np.abs(x) <= 1, 1/2, 0)
 
