@@ -88,3 +88,111 @@ def kde(x: np.array, sample: np.array, kernel: Callable, h: Optional[float]=None
             f_kde[idx] = (1/(n * h)) * kernel((sample - eval_pt) / h).sum()
 
     return f_kde
+
+def nadaraya_watson(x_obs, y_obs, x_pred, kernel, h=1):
+
+    """
+    VL - Nichtparametrische Stat
+    Def 4.2 Nadaraya-Watson-Schätzer
+
+    f_{n, h}^{NW} (x) = \frac {\sum Y_i K(x-x_i)}{\sum K(x-x_i)}}
+
+    x_obs = observation points
+    y_obs = observation values
+    x_pred = evaluation points
+    kernel = kernel function
+    h = bandwidth
+    """
+
+    # if h is a scalar, make it an array of size x_pred
+    if np.isscalar(h):
+        h = np.full(x_pred.shape[0], h)
+
+    y_pred = np.zeros(x_pred.shape[0])
+
+    if kernel == "epa":
+        kernel_func = kernel_epa
+    if kernel == "gauss":
+        kernel_func = kernel_gauss
+    if kernel == "rect":
+        kernel_func = kernel_rect
+    if kernel == "tri":
+        kernel_func = kernel_tri
+    if kernel == "sinc":
+        kernel_func = kernel_sinc
+
+    # for each evaluation point
+
+    # w = evaluate kernel function of each observation at evaluation point
+    # w * y = multiply with respective y_obs
+    # y_pred = w * y / sum(w)
+
+    for i, x in enumerate(x_pred):
+        
+        w = kernel_func((x - x_obs) / h[i])
+        # sum_of_w = np.sum(w)
+        # if np.sum(w) is 0 then set sum_of_w to 1
+
+        sum_of_w = np.sum(w) if (sum_of_w := np.sum(w)) != 0 else np.finfo(float).eps
+
+        y_pred[i] = np.sum(w * y_obs / sum_of_w)
+
+    return y_pred
+
+def loc_polynomial_estim_wls(x_obs, y_obs, x_pred, kernel, order, h=1):
+    """
+    Local polynomial estimator
+    """
+
+    # if h is a scalar, make it an array of size x_pred
+    if np.isscalar(h):
+        h = np.full(x_pred.shape[0], h)
+
+    y_pred = np.empty(x_pred.shape[0])
+    y_pred[:] = np.nan
+
+    if kernel == "epa":
+        kernel_func = kernel_epa
+    elif kernel == "gauss":
+        kernel_func = kernel_gauss
+    elif kernel == "rect":
+        kernel_func = kernel_rect
+    elif kernel == "tri":
+        kernel_func = kernel_tri
+    elif kernel == "sinc":
+        kernel_func = kernel_sinc
+    else:
+        raise ValueError("Unknown kernel type")
+
+    n = x_obs.shape[0]
+    num_coefficients = order + 1
+
+    # save the coefficients
+    res_coefficients = np.zeros((x_pred.shape[0], num_coefficients))
+
+    for i, x in enumerate(x_pred):
+
+        # create X matrix
+        X = np.ones((x_obs.shape[0], num_coefficients))
+        for j in range(1, num_coefficients):
+            X[:, j] = ((x_obs - x) / h[i]) ** j
+
+        # create Kernel matrix
+        K = np.diag(kernel_func((x_obs - x) / h[i]))
+
+        # create Y matrix
+        Y = y_obs.reshape(n, 1)
+
+        mat1_temp = np.array(X.T @ K @ X)
+        # pseudo inverse using SVD ... more stable for small matrices
+        mat1 = np.linalg.pinv(mat1_temp)
+
+        matmul = mat1 @ X.T @ K @ Y
+        coefficients = matmul.flatten()
+
+        res_coefficients[i, :] = coefficients
+    
+    y_pred = res_coefficients[:,0]
+    rest = res_coefficients[:,1:]
+
+    return y_pred, rest
